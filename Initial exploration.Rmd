@@ -1,0 +1,66 @@
+---
+title: "Read them all"
+output: html_notebook
+---
+
+As with all code, we start off with some imports.
+
+```{r}
+library(arrow)
+library(HumanitiesDataAnalysis)
+library(tidyverse)
+```
+
+
+
+```{r}
+
+one_year = arrow::read_parquet("flat_parquet/1865.parquet")
+one_year 
+```
+
+With any dataset like this, a lot of the applications will come in cleaning--such as looking at names, geographies, etc.
+Those will often involve regular expressions. Here, I use one to remove any numbers at the beginning of an address:
+that, in theory, leaves us with just the streets.
+
+```{R}
+
+one_year = one_year %>%
+  filter(occ_certainty == 15) %>%
+  mutate(st = addr_name %>% str_replace("^[0-9]+ ", ""))
+
+```
+
+What are the most common occupations?
+
+```{r}
+one_year %>%
+  group_by(occupation) %>%
+  summarize(count = n()) %>% 
+  arrange(-count) %>%
+  head(10)
+```
+What are the most occupations on Broadway? We'll add a line right near the start of that chain.
+```{r}
+one_year %>%
+  filter(addr_name %>% str_detect("Broadway")) %>%
+  group_by(occupation) %>%
+  summarize(count = n()) %>% 
+  arrange(-count) %>% 
+  head(10)
+```
+```{r}
+one_year %>%
+  filter(addr_name %>% str_detect("Bowery")) %>%
+  group_by(occupation) %>%
+  summarize(count = n()) %>% 
+  arrange(-count) %>% 
+  head(10)
+```
+
+```{r}
+one_year %>% 
+  filter(name %>% str_detect("^[A-Z ,\\.]+$")) %>%
+  select(name) %>%
+  sample_n(10)
+```

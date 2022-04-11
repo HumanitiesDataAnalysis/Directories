@@ -1,0 +1,8 @@
+---
+title: "Labor Relations"
+output: html_notebook
+---
+
+Create a CSV file (in Google, maybe?) that has an 'occupation' column
+and information about the occupations. Use joins to add occupation informations.
+

@@ -1,0 +1,27 @@
+
+
+```{r}
+library(HumanitiesDataAnalysis)
+library(arrow)
+library(tidyverse)
+library(sf)
+
+if (!file.exists("data/nyc_streets_historical_20220408.json")) {
+  R.utils::gunzip("data/nyc_streets_historical_20220408.json.gz", remove=FALSE)
+}
+
+source("R/sanitation department.R")
+source("R/street cleaners.R")
+source("R/building inspector.R")
+
+
+street_shapes = read_sf("data/nyc_streets_historical_20220408.json")
+```
+
+```{R}
+
+dir = read_directory(1886)
+cleaned = dir |> sample_n(10) |> clean_streets()
+street_shapes
+```
+

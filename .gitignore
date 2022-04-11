@@ -1,0 +1,6 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data/nyc_streets_historical_20220408.json
+*.nb.html

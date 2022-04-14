@@ -3,6 +3,8 @@ title: "Upscale Neighborhoods"
 output: html_document
 ---
 
+Load the code we're working with from the R directories.
+
 ```{r setup, include=FALSE}
 
 source("R/building inspector.R")

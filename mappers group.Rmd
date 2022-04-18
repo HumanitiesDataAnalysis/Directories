@@ -1,0 +1,75 @@
+
+
+```{r}
+library(HumanitiesDataAnalysis)
+library(arrow)
+library(tidyverse)
+library(sf)
+
+if (!file.exists("data/nyc_streets_historical_20220408.json")) {
+  R.utils::gunzip("data/nyc_streets_historical_20220408.json.gz", remove=FALSE)
+}
+
+source("R/sanitation department.R")
+source("R/street cleaners.R")
+source("R/building inspector.R")
+
+
+street_shapes = read_sf("data/nyc_streets_historical_20220408.json")
+```
+
+Mapping group in class (due before Thursday 2:00 pm)
+```{r}
+neighborhood_shapes = read_sf("data/2010 Neighborhood Tabulation Areas (NTAs).geojson") 
+library(sf)
+neighborhood_shapes = neighborhood_shapes |> st_transform(crs = 2263)
+street_shapes2 = street_shapes |> st_transform(crs = 2263)
+#set CRS of both objects to the same to prepare for join
+
+neighborhoods_and_streets = street_shapes |>
+  #filter(ntaname == “Lower East Side”) |>
+  #OPTIONAL filter street shapes object down before join because join takes a long time
+  st_join(neighborhood_shapes)
+#Test mapping streets in one neighborhood
+
+library(tidyverse)
+neighborhoods_and_streets |>
+  filter(ntaname == "Lower East Side") |>
+  ggplot() +
+  geom_sf()
+```
+
+
+
+
+
+
+
+
+```{r}
+street_shapes %>%
+  filter(y1910NameStreet %>% str_detect("13 AVE")) %>%
+  ggplot() +
+  geom_sf() 
+
+```
+
+```{r}
+street_shapes %>%
+  filter(y1880NameStreet == "13 AVE") %>%
+  ggplot() +
+  geom_sf()
+```
+
+
+```{R}
+
+dir = read_directory(1886)
+cleaned = dir |> sample_n(10) |> clean_streets()
+street_shapes = read_csv()
+```
+
+
+
+
+

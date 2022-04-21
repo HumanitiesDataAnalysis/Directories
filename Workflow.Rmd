@@ -1,0 +1,56 @@
+---
+title: "Upscale Neighborhoods"
+output: html_document
+---
+
+Load the code we're working with from the R directories.
+
+```{r setup, include=FALSE}
+
+source("R/building inspector.R")
+source("R/office of labor relations.R")
+source("R/sanitation department.R")
+source("R/street cleaners.R")
+
+```
+
+
+
+```{r}
+year = 1875
+
+read_year = function(year) {
+  arrow::read_parquet("flat_parquet/{year}.parquet" |> str_glue(), col_select = c(occupation))
+}
+
+total_counts = 1850:1889 |> map_dfr(read_year) |> count(occupation)
+total_counts |> arrange(-n)
+```
+
+```{r}
+
+# Produce a cleaned set of people for that year.
+year = 1887
+frame = read_directory(year) # sanitation dept function.
+
+dataset = frame |>
+  clean_data_better() |> # <- sanitation department pipeline. (maybe?)
+  clean_addresses_into_the_format_from_columbia() |> # <- street cleaners
+  assign_st_features_to_individuals() |> # <- Job of the street cleaners or inspects--they need to decide!
+  assign_neighborhoods_to_addresses() |> # <- the job of the building inspectors. 
+  assign_labor_categories_to_occupations() # <- job of labor relations -- could happen anywhere.
+
+
+dataset |>
+  analyze()
+# create some images showing what the function does <- mapping.
+  
+# Valeria and data cleaning: looking at random rows and seeing if they're junk.
+
+# Here we have a frame with.
+
+# occupations, neighborhoods, years
+
+# What is a neighborhood? A city block (Broadway 1-20, etc.)
+
+```

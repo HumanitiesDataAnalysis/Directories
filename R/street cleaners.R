@@ -3,8 +3,8 @@ clean_streets = function(frame) {
     mutate(addr_name = toupper(addr_name))|>
     extract(
       addr_name, 
-      c("number", "streetname","city"), 
-      "([[:digit:]]+)(.*)(Manhattan|Brooklyn)?", remove = FALSE) |>
+      c("number", "streetname"), 
+      "([[:digit:]]+) (.*)", remove = FALSE) |>
     street_type() |>
     boro_city_state() |>
     ordering()

@@ -3,6 +3,51 @@ title: "Labor Relations"
 output: html_notebook
 ---
 
-Create a CSV file (in Google, maybe?) that has an 'occupation' column
-and information about the occupations. Use joins to add occupation informations.
+```{r}
+library(HumanitiesDataAnalysis)
+library(arrow)
+library(tidyverse)
+library(sf)
 
+source("R/sanitation department.R")
+source("R/street cleaners.R")
+source("R/building inspector.R")
+```
+
+```{r}
+one_year = read_directory(1867) 
+
+one_year |>
+  write_csv("1867directory")
+
+one_year 
+```
+
+```{r}
+#filters outliers from occupation column and counts remaining values
+one_year |>
+  group_by(occupation) |>
+  filter(!str_detect(occupation, "widow|v|president|cold")) |>
+  drop_na(occupation) |>
+  mutate(count=n()) |>
+  distinct(occupation, .keep_all = TRUE) |>
+  head(124) |>
+  arrange(-count) |>
+  write_csv("1867directory")
+
+one_year
+```
+
+```{r}
+#reads google sheets into r 
+class_grouping_sample = read_csv("labor.csv")
+
+print(class_grouping_sample)
+```
+
+```{r}
+#joined table with google sheet of labor class categories 
+joined_occ_class = inner_join(x = one_year, y = class_grouping_sample)
+
+joined_occ_class
+```

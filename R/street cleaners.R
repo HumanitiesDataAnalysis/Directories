@@ -1,31 +1,92 @@
-clean_streets = function(frame) {
-  frame |> 
-    mutate(addr_name = toupper(addr_name))|>
-    extract(
-      addr_name, 
-      c("number", "streetname"), 
-      "([[:digit:]]+) (.*)", remove = FALSE) |>
-    street_type() |>
-    boro_city_state() |>
-    ordering()
-}
+
 
 #getting the street_type & boro (excluding those not in Manhattan and Brooklyn)
 
-#the following code is written by myself so any mistakes not attributable to other team members
+final_changes = function(df) {
+  df |> 
+    mutate(streetname = streetname |> str_replace("CENTER ", "CENTRE ")) |>
+    mutate(streetname = case_when(
+      streetname == "W ST" ~ "WEST ST",
+      streetname == "E ST" ~ "EAST ST",
+      TRUE ~ streetname
+    ))
+}
 
+fix_direction = function(df) {
+  df |>
+    mutate(streetname = streetname |> str_replace("^WEST ", "W ")) |>
+    mutate(streetname = streetname |> str_replace("^EAST ", "E "))
+}
+
+remove_number_helpers = function(df) {
+  df |> 
+    mutate(streetname = streetname |> str_replace("([:digit:]+)(TH|ND|ST|RD) ", "\\1 "))
+}
+
+
+
+fix_avenues = function(df) {
+  df |>
+  mutate(streetname = case_when(
+    streetname == "1 AVE"  ~ "FIRST AVE",
+    streetname == "2 AVE"  ~ "SECOND AVE",
+    streetname == "3 AVE"  ~ "THIRD AVE",
+    streetname == "4 AVE"  ~ "FOURTH AVE",
+    streetname == "5 AVE"  ~ "FIFTH AVE",
+    streetname == "6 AVE"  ~ "SIXTH AVE",
+    streetname == "7 AVE"  ~ "SEVENTH AVE",
+    streetname == "8 AVE"  ~ "EIGHTH AVE",
+    streetname == "9 AVE"  ~ "NINTH AVE",
+    streetname == "10 AVE" ~ "TENTH AVE",
+    streetname == "11 AVE" ~ "ELEVENTH AVE",
+    streetname == "12 AVE" ~ "TWELFTH AVE",
+    streetname == "13 AVE" ~ "THIRTEENTH AVE",
+    TRUE ~ streetname
+  ))
+}
 street_type = function(df){
+  # Change the street type.
   df|>
+    mutate(streetname = streetname |> str_replace(" +$", "") |> 
+                                      str_replace("^ +", "")) |>
     mutate(
       streetname = case_when(
-        str_detect(streetname, "AVENUE") ~ str_replace(streetname,"AVENUE","AV"),
-        str_detect(streetname, "BROAD$") ~ str_replace(streetname,"BROAD$","BROADWAY"), 
+        str_detect(streetname, "AVENUE$") ~ str_replace(streetname,"AVENUE$","AVE"),
+        str_detect(streetname, " AV$") ~ str_replace(streetname,"AV$","AVE"),
+        str_detect(streetname, " STREET$") ~ str_replace(streetname,"STREET$","ST"),
+        str_detect(streetname, " PLACE$") ~ str_replace(streetname,"PLACE$","PL"),
+        str_detect(streetname, " SLIP$") ~ str_replace(streetname,"SLIP$","SLIP"),
+        str_detect(streetname, " ROAD$") ~ str_replace(streetname,"ROAD$","RD"),
+        str_detect(streetname, " LANE$") ~ str_replace(streetname,"LANE$","LA"),
+        str_detect(streetname, "^AVENUE") ~ str_replace(streetname,"^AVENUE ","AVE "), 
+        str_detect(streetname, "^AV ") ~ str_replace(streetname,"^AV ","AVE "), 
+        # These ones are fine.
+        str_detect(streetname, " (AVE|ST|PL|SLIP|LA|MARKET|RD)$") ~ streetname,
+        str_detect(streetname, "^AVE ") ~ streetname,
+        # also applies to E BROADWAY, EAST BROADWAY, WEST BROADWAY, etc.
+        str_detect(streetname, "BROADWAY$") ~ streetname,
+        streetname == "BRD" ~ "BROADWAY",
+        streetname == "BOWERY" ~ "BOWERY",
+        streetname == "MADISON" ~ "MADISON AVE",
+        streetname == "LEXINGTON" ~ "LEXINGTON AVE",
+        streetname == "FIRST" ~ "FIRST AVE",
+        streetname == "SECOND" ~ "SECOND AVE",
+        streetname == "THIRD" ~ "THIRD AVE",
+        streetname == "FOURTH" ~ "FOURTH AVE",
+        streetname == "FIFTH" ~ "FIFTH AVE",
+        streetname == "SIXTH" ~ "SIXTH AVE",
+        streetname == "SEVENTH" ~ "SEVENTH AVE",
+        streetname == "EIGHTH" ~ "EIGHTH AVE",
+        streetname == "NINTH" ~ "NINTH AVE",
+        streetname == "TENTH" ~ "TENTH AVE",
+        streetname == "ELEVENTH" ~ "ELEVENTH AVE",
+        streetname == "TWELFTH" ~ "TWELFTH AVE",
+        streetname == "THIRTEENTH" ~ "THIRTEENTH AVE",
         #↑ don't want "BROADWAY ST" but "123 BROADWAY"
         TRUE ~ str_c(streetname, " ST")
         #without the TRUE... line, value would be changed into NA instead of "ST"
       ))
 }
-
 
 # the Avenue types are still looking weird, mostly with digits dangling at the end; but works okay with normal examples like "Greenwich Avenue" and "Lexington Avenue"
 
@@ -62,6 +123,21 @@ ordering = function(frame){
   frame[,new_cols]
 }  
 
+clean_streets = function(frame) {
+  frame |> 
+    mutate(addr_name = toupper(addr_name))|>
+    extract(
+      addr_name, 
+      c("number", "streetname"), 
+      "([[:digit:]]+) (.*)", remove = FALSE) |>
+    street_type() |>
+    boro_city_state() |>
+    remove_number_helpers() |>
+    fix_direction() |>
+    final_changes() |>
+    mutate(number = as.numeric(number))
+  #    ordering()
+}
 
 #To be revised: the following consider the case when a "number" observation contains two numbers and an "&", otherwise the "streetname" won't split properly; however, I don't know what to do with the split numbers, unnest() seems not working
 #clean_streets = function(frame) {

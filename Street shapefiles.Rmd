@@ -10,9 +10,11 @@ if (!file.exists("data/nyc_streets_historical_20220408.json")) {
   R.utils::gunzip("data/nyc_streets_historical_20220408.json.gz", remove=FALSE)
 }
 
-source("R/sanitation department.R")
-source("R/street cleaners.R")
-source("R/building inspector.R")
+source("R/sanitation department.R") # Come up with ways of cleaning data that gets rid of stuff that's not even worth looking at; throwing out bad data; filter or str_extract useless elements.
+source("R/street cleaners.R") # Regex to pull out names of streets and capitalize them in such a way that they can be joined into streetshape files we now have access to and can share with us by the group at Columbia.
+source("R/building inspector.R") # Figuring out what to do with that stuff once it starts to come in.
+
+# Labor Relations: how to normalize the tradework here.
 
 
 street_shapes = read_sf("data/nyc_streets_historical_20220408.json")
@@ -23,5 +25,30 @@ street_shapes = read_sf("data/nyc_streets_historical_20220408.json")
 dir = read_directory(1886)
 cleaned = dir |> sample_n(10) |> clean_streets()
 street_shapes
+
+dir |> sample_n(10)
+
+dir |> filter(addr_name |> str_detect("[0-9]"), !is.na(occupation), !is.na(addr_name), occupation |> str_detect("[0-9]")) |>
+  select(addr_name, occupation) |> view()
+# |>
+  group_by(occupation) |> summarize(count = n()) |> arrange(count)
+
+  
+
+# Bronx near Samuel
+# 
+```
+# Set up GitHub accout
+# If there's something that I haven't fixed, mention it in the issues. Clearly state the problems, even if they're very technical and don't know how to match them. This is an exercise in dscribing an issue well-enough for a coder to interact with the issue.
+# How to take the changes we made and push them up for everybody else to see.
+
+
+```{R}
+
+library(arrow)
+
+"1886" = read_parquet("flat_parquet//1886.parquet")
+
+getwd()
 ```
 

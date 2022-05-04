@@ -1,0 +1,96 @@
+---
+title: "Precarity"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+source("R/street cleaners.R")
+source("R/sanitation department.R")
+source("R/clean_historic_streets.R")
+
+# map_dfr means take *each* of these years and run "read directory" on them
+# sequentially, and then shove them all together into one dataframe.
+start_year = 1880
+ys = start_year + c(0, 1, 2) |> map_dfr(~read_directory(.x))
+
+y2 = read_directory(1887)
+# Probably filter to just home addresses!
+y2 |> count(addr_h)
+ys = ys |> clean_streets()
+ys = ys |> distinct(number, streetname, name, directory_year, occupation)
+earlier = ys |> filter(directory_year == start_year)
+# middle = ys |> filter(directory_year == start_year + 1)
+later = ys |> filter(directory_year == start_year + 2)
+```
+
+we can get all possible matches by joining on the frame itself.
+```{r}
+
+all_matches = ys |> 
+  filter(!is.na(number)) |>
+  filter(!is.na(streetname)) |>
+  inner_join(ys, by = c("streetname"="streetname", "number" = "number", "name" = "name"))
+
+matches = all_matches |> 
+  filter(directory_year.x < directory_year.y)
+
+matches |> count(directory_year.x, directory_year.y)
+
+```
+
+You could also look who's matched in 1881 and 1883 but *not* in 1882 to get
+an estimate of the error rate. That seems to be about 15% just missing.
+
+```{r}
+unique_not_occupation = matches |> distinct(streetname, number, name, directory_year.x, directory_year.y)
+
+unique_not_occupation |>  filter(directory_year.y == start_year + 3) |>
+  inner_join(unique_not_occupation |> filter(directory_year.y == start_year + 2 ), by = c("streetname"="streetname", "number" = "number", "name" = "name"))
+  
+
+```
+
+Here's a first stab at matching 1881 to 1883.
+```{R}
+matches = earlier |> 
+  filter(!is.na(number)) |>
+  filter(!is.na(streetname)) |>
+  inner_join(later, by = c("streetname"="streetname", "number" = "number", "name" = "name"))
+```
+
+We can see the matches are working because in places where the address and name 
+is constant but the occupation changes, the occupations are very often equivalent.
+
+This actually suggests something interesting, which is that you could look at 
+career progressions in this set too. 
+
+```{R}
+matches = earlier |> 
+  filter(!is.na(number)) |>
+  filter(!is.na(streetname)) |>
+  inner_join(later, by = c("streetname"="streetname", "number" = "number", "name" = "name")) |>
+  count(occupation.x, occupation.y) |>
+  filter(occupation.x != occupation.y) |>
+  arrange(-n) |> 
+  head(30)
+
+```
+An easier task is matching on name alone.
+```{r}
+matches = earlier |> 
+  filter(!is.na(number)) |>
+  filter(!is.na(streetname)) |>
+  inner_join(later, by = c("streetname"="streetname", "name" = "name"))
+matches |> filter(number.x != number.y) |>
+  count(number.y, number.x) |>
+  arrange(-n)
+
+
+```
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

@@ -7,6 +7,7 @@ library(tidyverse)
 library(sf)
 
 
+<<<<<<< HEAD
 ```
 
 ```{R}
@@ -17,12 +18,16 @@ source("R/street cleaners.R")
 
 ```{r}
 random = arrow::read_parquet("random_sample.parquet")
-source("R/street cleaners.R")
-source("R/sanitation department.R")
+source("R/sanitation department.R") # Come up with ways of cleaning data that gets rid of stuff that's not even worth looking at; throwing out bad data; filter or str_extract useless elements.
+source("R/street cleaners.R") # Regex to pull out names of streets and capitalize them in such a way that they can be joined into streetshape files we now have access to and can share with us by the group at Columbia.
+source("R/building inspector.R") # Figuring out what to do with that stuff once it starts to come in.
 source("R/clean_historic_streets.R")
 ys = c(1855, 1865, 1875, 1885) |> map_dfr(~read_directory(.x))
 
 # year = 1855
+
+
+# Labor Relations: how to normalize the tradework here.
 
 matchable = get_matchable_set()
 write_year = function (year) {
@@ -65,10 +70,5 @@ r2 |> filter(!is.na(streetname)) |>
   select(number, streetname) |>
   sample_n(10)
 ```
-matchable |> filter(streetname |> str_ends ("A")) |> arrange(number)
 
-
-
-
-```
 

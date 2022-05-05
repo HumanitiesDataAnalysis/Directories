@@ -6,22 +6,69 @@ library(arrow)
 library(tidyverse)
 library(sf)
 
-if (!file.exists("data/nyc_streets_historical_20220408.json")) {
-  R.utils::gunzip("data/nyc_streets_historical_20220408.json.gz", remove=FALSE)
-}
 
-source("R/sanitation department.R")
-source("R/street cleaners.R")
-source("R/building inspector.R")
-
-
-street_shapes = read_sf("data/nyc_streets_historical_20220408.json")
 ```
 
 ```{R}
 
-dir = read_directory(1886)
-cleaned = dir |> sample_n(10) |> clean_streets()
-street_shapes
+source("R/street cleaners.R")
+
+```
+
+```{r}
+random = arrow::read_parquet("random_sample.parquet")
+source("R/street cleaners.R")
+source("R/sanitation department.R")
+source("R/clean_historic_streets.R")
+ys = c(1855, 1865, 1875, 1885) |> map_dfr(~read_directory(.x))
+
+# year = 1855
+
+matchable = get_matchable_set()
+write_year = function (year) {
+  y = read_directory(year)
+  y_matched = y |> clean_streets() |> filter(!is.na(streetname)) |> 
+    inner_join(matchable |> filter(year == 1880), by = c("streetname" = "streetname", "number" = "number"))
+  
+  shortened = street_geometry() |> inner_join(y_matched) |> 
+    mutate(m = st_line_sample(st_cast(geometry, "LINESTRING"), 1))
+  
+  st_geometry(shortened) = shortened$m
+  
+  shortened = shortened |>
+    mutate(directory_year = str_replace(directory_year, "18..-", "18") |> as.numeric())
+  writeable = shortened |> mutate(
+    x = st_coordinates(geometry)[,1],
+    y = -1 * st_coordinates(geometry)[,2]) |>
+    select(streetname, occupation, x, y, addr_h, addr_name, directory_year, labeled_black, name) |> sample_frac(1) |>
+    mutate(ix = 1:n()) |>
+    mutate(occupation = fct_lump(occupation, 2044),
+           streetname = fct_lump(streetname, 2044),
+           across(c(addr_h, labeled_black), factor)) |>
+    st_set_geometry(NULL) |>
+    write_feather(str_glue("data/{year}.feather"))
+  }
+#writeable |> write_csv("/tmp/written.csv")
+
+shortened |>
+  filter(!is.na(occupation)) |> 
+  mutate(occupation = fct_lump(occupation, 20)) |>
+  filter(occupation != "Other") |>
+  ggplot() + geom_sf(alpha = .025, size=.5) +
+  facet_wrap(~occupation, ncol=10)
+```
+
+Random non-matching streets.
+```{r}
+r2 |> filter(!is.na(streetname)) |>
+  anti_join(matchable , by = c("streetname" = "streetname", "number" = "number")) |>
+  select(number, streetname) |>
+  sample_n(10)
+```
+matchable |> filter(streetname |> str_ends ("A")) |> arrange(number)
+
+
+
+
 ```
 

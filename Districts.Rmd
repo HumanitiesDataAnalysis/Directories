@@ -1,0 +1,60 @@
+---
+title: "Retail Districts"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(sf)
+library(HumanitiesDataAnalysis)
+source("R/clean_historic_streets.R")
+source("R/read_buildings.R")
+source("R/street cleaners.R")
+# This must be run last
+source("R/sanitation department.R")
+source("R/read_buildings.R")
+y1 = read_directory_with_street_matching(1880)
+
+```
+
+```{r}
+y1 |> filter(OBJECTID %in% c(1 , 5, 10)) |> 
+  ggplot() + geom_sf()
+  
+not_spatial = y1 |> 
+  filter(addr_h == FALSE) |>
+  select(OBJECTID, occupation) |>
+  st_set_geometry(NULL)
+
+significance = not_spatial |>
+  group_by(OBJECTID) |>
+  summarize_llr(token=occupation) |> 
+  arrange(-.dunning_llr) |> 
+  head(100)
+  
+
+y1 |> 
+  inner_join(significance) |>
+  count(occupation, OBJECTID, streetname) |>
+  ggplot() + geom_sf(aes(label=paste(streetname, occupation))) + geom_sf_label(aes(label=paste(streetname, occupation), size=1))
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

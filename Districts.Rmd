@@ -8,12 +8,21 @@ library(tidyverse)
 library(sf)
 library(HumanitiesDataAnalysis)
 source("R/clean_historic_streets.R")
-source("R/read_buildings.R")
 source("R/street cleaners.R")
+source("R/read_buildings.R")
 # This must be run last
 source("R/sanitation department.R")
-source("R/read_buildings.R")
-y1 = read_directory_with_street_matching(1880)
+y1880 = read_directory_with_street_matching(1880)
+
+simons_read_directory = function(year) {
+  read_directory_with_matching(year) |>
+    filter(addr_h == FALSE)
+}
+
+c(1880, 1885, 1890) |>
+  map_dfr(simons_read_directory)
+
+
 
 ```
 

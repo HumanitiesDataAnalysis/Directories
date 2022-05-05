@@ -1,3 +1,5 @@
+source("./street claners.R")
+
 sanitize_better = function(df) {
   df |>
     filter(addr_name |> str_detect("[0-9]"), addr_name |> str_detect("[a-z]"), !is.na(occupation), !is.na(addr_name)) |>
@@ -21,10 +23,11 @@ read_directory = function(year) {
   
   raw |> 
     eliminate_overfull_addresses() |>
-    filter(str_length(name) > 10) |>
-
+    filter(str_length(name) > 8) |>
     sanitize_better() |> 
-    mutate(directory_year = str_replace(directory_year, "18..-", "18") |> as.numeric())
+    mutate(directory_year = str_replace(directory_year, "18..-", "18") |> as.numeric()) |>
+    clean_streets()
+  
 }
 
 

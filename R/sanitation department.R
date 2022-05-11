@@ -1,4 +1,3 @@
-source("./street claners.R")
 
 sanitize_better = function(df) {
   df |>
@@ -17,19 +16,26 @@ eliminate_overfull_addresses = function(frame) {
 
 library(arrow)
 read_directory = function(year) {
+
+  dir.create("cleaned_parquet", showWarnings = FALSE)
+  pre_created_filename = str_glue("cleaned_parquet/{year}.parquet")
+  if (file.exists(pre_created_filename)) {
+    return(read_parquet(pre_created_filename))
+  }
   # str_glue inserts the year into the filename.
   filename = str_glue("flat_parquet/{year}.parquet")
   raw = read_parquet(filename)
   
-  raw |> 
+  cleaned = raw |> 
     eliminate_overfull_addresses() |>
     filter(str_length(name) > 8) |>
     sanitize_better() |> 
-    mutate(directory_year = str_replace(directory_year, "18..-", "18") |> as.numeric()) |>
+    mutate(directory_year = str_replace(directory_year, "18(..)-..", "18\\1") |> as.numeric()) |>
     clean_streets()
   
+  cleaned |> write_parquet(pre_created_filename)
+  cleaned
 }
-
 
 eliminate_overfull_addresses = function(frame) {
   overcounted = frame |>

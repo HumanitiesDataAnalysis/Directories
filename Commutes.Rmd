@@ -1,0 +1,68 @@
+---
+title: "Home and away"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(sf)
+library(HumanitiesDataAnalysis)
+source("R/clean_historic_streets.R")
+source("R/street cleaners.R")
+source("R/read_buildings.R")
+# This must be run last
+source("R/sanitation department.R")
+
+
+
+```
+
+```{r}
+matched = read_directory_with_street_matching(1885)
+all = matched |> st_cast("POINT") 
+
+all = all |> mutate(x = st_coordinates(geometry)[,1], y = st_coordinates(geometry)[,2]) 
+
+
+all |> 
+  distinct(entry_uuid, .keep_all = TRUE)
+
+all |> sample_n(10000) |> ggplot() + geom_point(aes(x = x, y = y)) + coord_equal()
+
+matchable
+
+```
+
+```{r}
+all = all |> 
+  select(OBJECTID, entry_uuid, streetname, number, name, position_on_street, side, directory_year, occupation, labeled_black, addr_h, x, y)
+```
+
+```{r}
+plottable <- all |> group_by(entry_uuid) |> mutate(n = n(), home = sum(addr_h)) |>
+  mutate(addr_type = ifelse(addr_h, "Home", "Work")) |>
+  filter(n == 2, home == 1) |> group_by(occupation) |> filter(n() > 400) |> 
+  sample_n(400)
+
+plottable |> ggplot() + aes(color=addr_type) + geom_sf(alpha = .2, size=.5) + facet_wrap(~occupation, ncol=6) + scale_color_brewer(type = "qual", palette = 2) + theme_bw() + theme(legend.position = "none") + labs(title = "Home (green) and work (orange) addresses, by occupation, 1885")
+```
+
+```{r}
+all = all |>
+  st_set_geometry(NULL)
+
+home = all |> filter(addr_h == TRUE)
+work = all |> filter(addr_h == FALSE)
+wider = home |> full_join(work, by = c("name", "directory_year", "occupation", "entry_uuid"), suffix = c("_home", "_work"))
+
+
+plottable = wider |> group_by(entry_uuid) |> filter(n() == 1) |>
+  filter(!is.na(streetname_home), !is.na(streetname_work)) 
+
+plottable |>
+  group_by(occupation) |>
+  filter(n() > 200) |>
+  sample_n(200) |> 
+  ggplot() + 
+  geom_segment(alpha = 0.01) + aes(x=x_home, xend=x_work, y = y_home, yend = y_work) + coord_equal() + facet_wrap(~occupation) + geom_point(aes(x = x_home, y = y_home), alpha = 0.01, color='red') + coord_equal()
+```
